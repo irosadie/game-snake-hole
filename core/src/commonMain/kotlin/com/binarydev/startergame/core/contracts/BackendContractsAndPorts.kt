@@ -382,7 +382,8 @@ data class DevicePreferences(
     val musicEnabled: Boolean = true,
     val soundEffectsEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
-    val installationId: String = "local-install-default"
+    val installationId: String = "local-install-default",
+    val lowRamGraphicsMode: Boolean = false
 )
 
 interface DevicePreferencesRepository {
@@ -391,6 +392,7 @@ interface DevicePreferencesRepository {
     suspend fun setMusicEnabled(enabled: Boolean)
     suspend fun setSoundEffectsEnabled(enabled: Boolean)
     suspend fun setVibrationEnabled(enabled: Boolean)
+    suspend fun setLowRamGraphicsMode(enabled: Boolean) {}
 }
 
 // --- 8. Google Play Billing Subscription (Remove Ads / Google Pay) & Backend Verification Contract ---

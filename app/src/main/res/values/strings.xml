@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Ubah nama aplikasi & tagline splash screen di sini untuk game baru -->
-    <string name="app_name">Kata Nusantara Puzzle</string>
-    <string name="splash_tagline">Asah Otak &amp; Susun Kata Nusantara</string>
-    <string name="splash_footer">Powered by BinaryDev Game Starter</string>
+    <string name="app_name">Gecko Out</string>
+    <string name="splash_tagline">Geser Gecko, Masuk Lubang, Tanpa Buntu</string>
+    <string name="splash_footer">Gecko Out · Sliding Terrarium Puzzle</string>
 </resources>

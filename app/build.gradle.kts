@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -24,16 +22,9 @@ fun loadKeyValueFile(file: File): Map<String, String> {
 }
 
 val dotEnvMap: Map<String, String> = loadKeyValueFile(rootProject.file(".env"))
-val localProps: Properties = Properties().apply {
-    val lpFile = rootProject.file("local.properties")
-    if (lpFile.exists()) {
-        lpFile.inputStream().use { load(it) }
-    }
-}
 
 fun envOrDefault(key: String, default: String): String = System.getenv(key)?.takeIf { it.isNotBlank() }
     ?: dotEnvMap[key]?.takeIf { it.isNotBlank() }
-    ?: localProps.getProperty(key)?.takeIf { it.isNotBlank() }
     ?: default
 
 fun escapeBuildConfigString(value: String): String =
@@ -44,7 +35,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.binarydev.startergame"
+        applicationId = "com.aistudio.geckoout.gkxtrm"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -54,7 +45,9 @@ android {
         manifestPlaceholders["ADMOB_APP_ID"] = admobAppId
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "GAME_ID", escapeBuildConfigString(envOrDefault("GAME_ID", "sample-puzzle-v1")))
+        buildConfigField("String", "STARTER_MODE", escapeBuildConfigString(envOrDefault("STARTER_MODE", "demo")))
+        buildConfigField("String", "BACKEND_BASE_URL", escapeBuildConfigString(envOrDefault("BACKEND_BASE_URL", "https://demo.local.invalid")))
+        buildConfigField("String", "GAME_ID", escapeBuildConfigString(envOrDefault("GAME_ID", "gecko-out-v1")))
         buildConfigField("String", "PRIVACY_POLICY_URL", escapeBuildConfigString(envOrDefault("PRIVACY_POLICY_URL", "https://example.com/privacy")))
         buildConfigField("String", "BACKEND_API_KEY", escapeBuildConfigString(envOrDefault("BACKEND_API_KEY", "")))
         buildConfigField("int", "BACKEND_TIMEOUT_MS", envOrDefault("BACKEND_TIMEOUT_MS", "5000").toIntOrNull()?.toString() ?: "5000")
@@ -72,23 +65,19 @@ android {
         buildConfigField("String", "FCM_API_KEY", escapeBuildConfigString(envOrDefault("FCM_API_KEY", "")))
     }
 
-    flavorDimensions += "mode"
-    productFlavors {
-        create("demo") {
-            dimension = "mode"
-            applicationIdSuffix = ".demo"
-            versionNameSuffix = "-demo"
-            buildConfigField("String", "STARTER_MODE", "\"demo\"")
-            buildConfigField("String", "BACKEND_BASE_URL", escapeBuildConfigString(envOrDefault("DEMO_BACKEND_BASE_URL", "https://demo.local.invalid")))
-        }
-        create("integrated") {
-            dimension = "mode"
-            buildConfigField("String", "STARTER_MODE", "\"integrated\"")
-            buildConfigField("String", "BACKEND_BASE_URL", escapeBuildConfigString(envOrDefault("BACKEND_BASE_URL", "http://10.0.2.2:8080")))
+    signingConfigs {
+        create("debugConfig") {
+            storeFile = file("${rootDir}/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debugConfig")
+        }
         release {
             isMinifyEnabled = false
         }
@@ -125,6 +114,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
 
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)

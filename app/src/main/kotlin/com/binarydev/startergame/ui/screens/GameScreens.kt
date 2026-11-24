@@ -73,6 +73,8 @@ import com.binarydev.startergame.ui.viewmodel.AchievementsUiState
 import com.binarydev.startergame.ui.viewmodel.GameplayUiState
 import com.binarydev.startergame.ui.viewmodel.HomeUiState
 import com.binarydev.startergame.ui.viewmodel.LevelResultSummary
+import com.binarydev.startergame.ui.performance.DevicePerformanceInfo
+import com.binarydev.startergame.ui.performance.SampledDrawableImage
 import com.binarydev.startergame.ui.viewmodel.SettingsUiState
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
@@ -86,18 +88,18 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(
     gameTitle: String,
-    durationMs: Long = 1_400L,
+    durationMs: Long = 700L,
     onSplashFinished: () -> Unit
 ) {
     var startAnimation by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
-        targetValue = if (startAnimation) 1f else 0.78f,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        targetValue = if (startAnimation) 1f else 0.84f,
+        animationSpec = tween(durationMillis = 360, easing = FastOutSlowInEasing),
         label = "splash_scale"
     )
     val alpha by animateFloatAsState(
         targetValue = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = tween(durationMillis = 300),
         label = "splash_alpha"
     )
 
@@ -124,12 +126,13 @@ fun SplashScreen(
         ) {
             Surface(
                 shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.primary,
-                shadowElevation = 12.dp,
+                color = Color(0xFF132238),
+                shadowElevation = 6.dp,
                 modifier = Modifier.size(116.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                SampledDrawableImage(
+                    resId = R.drawable.gecko_out_icon_fg_1795414597936,
+                    maxSizeDp = 116.dp,
                     contentDescription = gameTitle,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -1065,6 +1068,7 @@ fun SettingsScreen(
     onToggleMusic: (Boolean) -> Unit,
     onToggleSoundEffects: (Boolean) -> Unit,
     onToggleVibration: (Boolean) -> Unit,
+    onToggleLowRamGraphicsMode: (Boolean) -> Unit = {},
     onSignInGoogle: () -> Unit,
     onSignOut: () -> Unit,
     onTriggerSimulatedConfig: (hints: Boolean, lives: Boolean, ads: Boolean, failApi: Boolean) -> Unit,
@@ -1083,6 +1087,8 @@ fun SettingsScreen(
     onToggleSimulateSandboxSubscription: () -> Unit = {},
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val devicePerfInfo = remember(context) { DevicePerformanceInfo.detect(context) }
     val uriHandler = LocalUriHandler.current
     var showConfigJson by remember { androidx.compose.runtime.mutableStateOf(false) }
 
@@ -1155,6 +1161,18 @@ fun SettingsScreen(
                             checked = uiState.preferences.vibrationEnabled,
                             onCheckedChange = onToggleVibration,
                             tag = "toggle_vibration"
+                        )
+                        HorizontalDivider()
+                        PreferenceToggleRow(
+                            label = "Mode Ringan (Hemat RAM / HP Kentang)",
+                            checked = uiState.preferences.lowRamGraphicsMode,
+                            onCheckedChange = onToggleLowRamGraphicsMode,
+                            tag = "toggle_low_ram_mode"
+                        )
+                        Text(
+                            text = "RAM terdeteksi: ${devicePerfInfo.totalRamMb} MB · ${devicePerfInfo.cpuCores} Core. Mode Ringan menonaktifkan animasi idle (0fps saat diam), hemat shader & partikel agar lancar tanpa lag.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

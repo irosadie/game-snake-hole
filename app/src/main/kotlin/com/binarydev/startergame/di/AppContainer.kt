@@ -17,6 +17,10 @@ import com.binarydev.startergame.core.contracts.SessionRepository
 import com.binarydev.startergame.core.contracts.SubscriptionBillingRepository
 import com.binarydev.startergame.core.engine.GameSessionCoordinator
 import com.binarydev.startergame.core.engine.LevelRuleEngine
+import com.binarydev.startergame.core.gecko.GeckoGameState
+import com.binarydev.startergame.core.gecko.GeckoMove
+import com.binarydev.startergame.core.gecko.GeckoOutRuleEngine
+import com.binarydev.startergame.core.gecko.LevelDef
 import com.binarydev.startergame.core.sample.SamplePuzzleGame
 import com.binarydev.startergame.core.sample.SamplePuzzleLevel
 import com.binarydev.startergame.core.sample.SamplePuzzleMove
@@ -29,6 +33,9 @@ import com.binarydev.startergame.data.integration.SessionRepositoryImpl
 import com.binarydev.startergame.data.integration.StarterFirebaseMessagingService
 import com.binarydev.startergame.data.local.StarterGameDatabase
 import com.binarydev.startergame.data.preferences.DataStoreDevicePreferencesRepository
+import com.binarydev.startergame.data.preferences.DataStoreHighScoreRepository
+import com.binarydev.startergame.data.preferences.GeckoProgressRepository
+import com.binarydev.startergame.data.preferences.HighScoreRepository
 import com.binarydev.startergame.data.remote.GoBackendApiClient
 import com.binarydev.startergame.data.remote.HttpUrlConnectionGoBackendApiClient
 import com.binarydev.startergame.data.remote.MockGoBackendApiClient
@@ -40,6 +47,7 @@ import com.binarydev.startergame.data.repository.SimulatedAdAdapter
 import com.binarydev.startergame.data.repository.SimulatedLeaderboardAdapter
 import com.binarydev.startergame.data.repository.SimulatedRemoteConfigAdapter
 import com.binarydev.startergame.data.repository.SwitchableAdService
+import com.binarydev.startergame.ui.performance.DevicePerformanceInfo
 import java.lang.ref.WeakReference
 
 interface AppContainer<LevelData, State, Move> {
@@ -47,6 +55,8 @@ interface AppContainer<LevelData, State, Move> {
     val ruleEngine: LevelRuleEngine<LevelData, State, Move>
     val coordinator: GameSessionCoordinator<LevelData, State, Move>
     val progressRepository: RoomProgressRepository<LevelData, State, Move>
+    val geckoProgressRepository: GeckoProgressRepository
+    val highScoreRepository: HighScoreRepository
     val devicePreferencesRepository: DevicePreferencesRepository
     val configRepository: ConfigRepository
     val sessionRepository: SessionRepository
@@ -98,8 +108,18 @@ class StarterAppContainer<LevelData, State, Move>(
     override val coordinator: GameSessionCoordinator<LevelData, State, Move> =
         GameSessionCoordinator(ruleEngine)
 
-    private val prefsRepo = DataStoreDevicePreferencesRepository(dataStore)
+    private val devicePerformanceInfo = DevicePerformanceInfo.detect(context.applicationContext)
+    private val prefsRepo = DataStoreDevicePreferencesRepository(
+        dataStore = dataStore,
+        defaultLowRamMode = devicePerformanceInfo.recommendedLowRamMode
+    )
     override val devicePreferencesRepository: DevicePreferencesRepository = prefsRepo
+    override val geckoProgressRepository: GeckoProgressRepository = GeckoProgressRepository(dataStore)
+    override val highScoreRepository: HighScoreRepository = if (dataStoreOverride != null) {
+        DataStoreHighScoreRepository(dataStoreOverride)
+    } else {
+        DataStoreHighScoreRepository.fromContext(context.applicationContext)
+    }
 
     private val backendApiClient: GoBackendApiClient? = when {
         backendApiOverride != null -> backendApiOverride
@@ -223,6 +243,22 @@ class StarterAppContainer<LevelData, State, Move>(
         )
 
     companion object {
+        fun createDefaultGeckoOutContainer(
+            context: Context,
+            isDemoMode: Boolean = BuildConfig.STARTER_MODE == "demo"
+        ): StarterAppContainer<LevelDef, GeckoGameState, GeckoMove> {
+            val defaultEngine = GeckoOutRuleEngine()
+            val envConfiguredMetadata = defaultEngine.metadata.copy(
+                gameId = "gecko-out-v1",
+                privacyPolicyUrl = BuildConfig.PRIVACY_POLICY_URL.ifBlank { defaultEngine.metadata.privacyPolicyUrl }
+            )
+            return StarterAppContainer(
+                context = context,
+                ruleEngine = GeckoOutRuleEngine(metadata = envConfiguredMetadata),
+                isDemoMode = isDemoMode
+            )
+        }
+
         fun createDefaultSamplePuzzleContainer(
             context: Context,
             isDemoMode: Boolean = BuildConfig.STARTER_MODE == "demo"

@@ -35,7 +35,8 @@ interface ConfigCacheStore {
 }
 
 class DataStoreDevicePreferencesRepository(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    private val defaultLowRamMode: Boolean = false
 ) : DevicePreferencesRepository, ConfigCacheStore {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -45,7 +46,8 @@ class DataStoreDevicePreferencesRepository(
             musicEnabled = prefs[KEY_MUSIC_ENABLED] ?: true,
             soundEffectsEnabled = prefs[KEY_SFX_ENABLED] ?: true,
             vibrationEnabled = prefs[KEY_VIBRATION_ENABLED] ?: true,
-            installationId = prefs[KEY_INSTALLATION_ID] ?: DEFAULT_INSTALLATION_ID
+            installationId = prefs[KEY_INSTALLATION_ID] ?: DEFAULT_INSTALLATION_ID,
+            lowRamGraphicsMode = prefs[KEY_LOW_RAM_GRAPHICS_MODE] ?: defaultLowRamMode
         )
     }
 
@@ -69,6 +71,10 @@ class DataStoreDevicePreferencesRepository(
 
     override suspend fun setVibrationEnabled(enabled: Boolean) {
         dataStore.edit { it[KEY_VIBRATION_ENABLED] = enabled }
+    }
+
+    override suspend fun setLowRamGraphicsMode(enabled: Boolean) {
+        dataStore.edit { it[KEY_LOW_RAM_GRAPHICS_MODE] = enabled }
     }
 
     override suspend fun getCachedConfig(): CachedRemoteConfig? {
@@ -117,6 +123,7 @@ class DataStoreDevicePreferencesRepository(
         private val KEY_MUSIC_ENABLED = booleanPreferencesKey("music_enabled")
         private val KEY_SFX_ENABLED = booleanPreferencesKey("sfx_enabled")
         private val KEY_VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
+        private val KEY_LOW_RAM_GRAPHICS_MODE = booleanPreferencesKey("low_ram_graphics_mode")
         private val KEY_INSTALLATION_ID = stringPreferencesKey("installation_id")
         private val KEY_CACHED_CONFIG_JSON = stringPreferencesKey("cached_config_json")
         private val KEY_CACHED_CONFIG_FETCHED_AT = longPreferencesKey("cached_config_fetched_at_ms")

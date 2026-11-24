@@ -731,6 +731,21 @@ class SettingsViewModel<LevelData, State, Move>(
         }
     }
 
+    fun toggleLowRamGraphicsMode(enabled: Boolean) {
+        viewModelScope.launch {
+            container.devicePreferencesRepository.setLowRamGraphicsMode(enabled)
+            _uiState.update {
+                it.copy(
+                    feedbackMessage = if (enabled) {
+                        "Mode Ringan (Hemat RAM) aktif: grafis disederhanakan & 0fps saat diam."
+                    } else {
+                        "Mode Grafis Standar aktif."
+                    }
+                )
+            }
+        }
+    }
+
     suspend fun signInWithGoogleSuspend() {
         val result = container.sessionRepository.signInWithGoogle()
         val msg = when (result) {

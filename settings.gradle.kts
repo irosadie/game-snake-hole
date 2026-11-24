@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "starter-game"
+rootProject.name = "GeckoOut"
 include(":core")
 include(":app")
